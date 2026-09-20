@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "FinanStar",
+    "slug": "finanstar",
+    "scheme": "finanstar",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.epr.finanstar"
+    },
+    "android": {
+      "package": "com.epr.finanstar"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-status-bar"
+    ]
+  }
+}
