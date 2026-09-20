@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { validateEnv } from './config/env.validation';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { validateEnv } from './config/env.validation';
         uri: config.getOrThrow<string>('MONGO_URI'),
       }),
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
