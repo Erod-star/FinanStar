@@ -1,6 +1,6 @@
 # SPEC 01 — Per-user expenses module (API)
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** none (builds on the existing `auth/` module)
 > **Date:** 2026-09-22
 > **Objective:** Replace the `expenses` scaffold in `apps/api` with a real CRUD where every expense belongs to the authenticated user and no user can see or touch another user's expenses.
@@ -54,7 +54,11 @@ export enum ExpenseCategory {
   OTHER = 'OTHER',
 }
 
-@Schema({ collection: 'expenses', timestamps: true, toJSON: { virtuals: true } })
+@Schema({
+  collection: 'expenses',
+  timestamps: true,
+  toJSON: { virtuals: true, versionKey: false, transform: (_doc, ret) => (delete ret._id, ret) },
+})
 export class Expense {
   userId: Types.ObjectId; // ref: User.name, required, indexed
   date: Date; // required, always UTC 00:00 of the given day
@@ -69,6 +73,7 @@ export class Expense {
 }
 // Virtual: weekNumber = Math.ceil(date.getUTCDate() / 7) → 1..5
 // Compound index: { userId: 1, date: -1 }
+// Responses expose `id` (string, no `_id`) and omit `__v`
 ```
 
 DTOs (`apps/api/src/expenses/dto/`):
@@ -100,19 +105,19 @@ Conventions:
 
 ## Acceptance criteria
 
-- [ ] `pnpm --filter @finanstar/api typecheck`, `lint` and `test` pass.
-- [ ] No `src/...` imports remain under `apps/api/src/expenses/`.
-- [ ] All `/expenses` endpoints return 401 without a valid Bearer token.
-- [ ] `POST /expenses` with a valid body returns 201, `status_code: 201`, and `data` contains `_id`, `userId` equal to the token's user, `weekNumber`, `createdAt`, `updatedAt`.
-- [ ] `POST /expenses` with `amount: 12.5`, `amount: 0`, missing `necessityType`, `category: 'CAR'`, `date: '22/09/2026'` or an extra `userId` field returns 400.
-- [ ] `POST` with `date: '2026-09-22'` stores `2026-09-22T00:00:00.000Z` and returns `weekNumber: 4`. `date: '2026-09-29'` returns `weekNumber: 5`. `date: '2026-09-07'` returns `weekNumber: 1`.
-- [ ] `GET /expenses?month=9&year=2026` returns only the caller's non-deleted expenses dated in September 2026 UTC, ordered by `date` desc, with `total` equal to the array length (when > 0).
-- [ ] `GET /expenses` with no params returns the current UTC month.
-- [ ] `GET /expenses?month=13` returns 400.
-- [ ] User B calling `GET`, `PATCH` or `DELETE /expenses/:id` on user A's expense gets 404, and A's expense is unchanged.
-- [ ] `GET /expenses/not-an-id` returns 400.
-- [ ] `PATCH /expenses/:id` with `{ amount: 900 }` updates only `amount` and bumps `updatedAt`.
-- [ ] `DELETE /expenses/:id` returns 200. The document still exists in MongoDB with `deletedAt` set. Subsequent `GET`/`PATCH`/`DELETE` on it return 404, and it no longer appears in the list.
+- [x] `pnpm --filter @finanstar/api typecheck`, `lint` and `test` pass.
+- [x] No `src/...` imports remain under `apps/api/src/expenses/`.
+- [x] All `/expenses` endpoints return 401 without a valid Bearer token.
+- [x] `POST /expenses` with a valid body returns 201, `status_code: 201`, and `data` contains `id` (no `_id`, no `__v`), `userId` equal to the token's user, `weekNumber`, `createdAt`, `updatedAt`.
+- [x] `POST /expenses` with `amount: 12.5`, `amount: 0`, missing `necessityType`, `category: 'CAR'`, `date: '22/09/2026'` or an extra `userId` field returns 400.
+- [x] `POST` with `date: '2026-09-22'` stores `2026-09-22T00:00:00.000Z` and returns `weekNumber: 4`. `date: '2026-09-29'` returns `weekNumber: 5`. `date: '2026-09-07'` returns `weekNumber: 1`.
+- [x] `GET /expenses?month=9&year=2026` returns only the caller's non-deleted expenses dated in September 2026 UTC, ordered by `date` desc, with `total` equal to the array length (when > 0).
+- [x] `GET /expenses` with no params returns the current UTC month.
+- [x] `GET /expenses?month=13` returns 400.
+- [x] User B calling `GET`, `PATCH` or `DELETE /expenses/:id` on user A's expense gets 404, and A's expense is unchanged.
+- [x] `GET /expenses/not-an-id` returns 400.
+- [x] `PATCH /expenses/:id` with `{ amount: 900 }` updates only `amount` and bumps `updatedAt`.
+- [x] `DELETE /expenses/:id` returns 200. The document still exists in MongoDB with `deletedAt` set. Subsequent `GET`/`PATCH`/`DELETE` on it return 404, and it no longer appears in the list.
 
 ## Decisions
 
@@ -135,6 +140,7 @@ Conventions:
 - **No:** restore endpoint in this spec.
 - **Yes:** `ParseObjectIdPipe` from `@nestjs/mongoose` (present in the installed v11). Malformed id is a client error → 400.
 - **Yes:** field name `userId` (as requested), not `user`.
+- **Yes:** responses expose `id` (Mongoose virtual) and hide `_id` and `__v` via `toJSON`. Queries still filter on `_id`.
 - **No:** unit tests of the service with a mocked model. e2e setup does not exist yet as well.
 
 ## Risks

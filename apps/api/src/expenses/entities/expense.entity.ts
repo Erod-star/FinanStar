@@ -20,7 +20,19 @@ export enum ExpenseCategory {
   OTHER = 'OTHER',
 }
 
-@Schema({ collection: 'expenses', timestamps: true, toJSON: { virtuals: true } })
+@Schema({
+  collection: 'expenses',
+  timestamps: true,
+  toJSON: {
+    virtuals: true,
+    versionKey: false,
+    // Expose `id` only, not `_id`
+    transform: (_doc, ret: Record<string, unknown>) => {
+      delete ret._id;
+      return ret;
+    },
+  },
+})
 export class Expense {
   @Prop({ type: Types.ObjectId, ref: User.name, required: true, index: true })
   userId!: Types.ObjectId;
