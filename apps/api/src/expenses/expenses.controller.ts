@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ParseObjectIdPipe } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { ExpensesService } from './expenses.service';
@@ -25,20 +15,17 @@ export class ExpensesController {
 
   @Get()
   async findAll(@Query() query: ListExpensesQueryDto, @GetUser() user: UserDocument) {
-    const { expenses, total } = await this.expensesService.findAll(query, user._id);
-    return formatToApiResponse({ data: expenses, total });
-  }
-
-  @Post()
-  async create(@Body() createExpenseDto: CreateExpenseDto, @GetUser() user: UserDocument) {
-    const expense = await this.expensesService.create(createExpenseDto, user._id);
-    return formatToApiResponse({ data: expense, status: HttpStatus.CREATED });
+    return await this.expensesService.findAll(query, user._id);
   }
 
   @Get(':id')
   async findOne(@Param('id', ParseObjectIdPipe) id: Types.ObjectId, @GetUser() user: UserDocument) {
-    const expense = await this.expensesService.findOne(id, user._id);
-    return formatToApiResponse({ data: expense });
+    return await this.expensesService.findOne(id, user._id);
+  }
+
+  @Post()
+  async create(@Body() createExpenseDto: CreateExpenseDto, @GetUser() user: UserDocument) {
+    return await this.expensesService.create(createExpenseDto, user._id);
   }
 
   @Patch(':id')
@@ -47,8 +34,7 @@ export class ExpensesController {
     @Body() updateExpenseDto: UpdateExpenseDto,
     @GetUser() user: UserDocument,
   ) {
-    const expense = await this.expensesService.update(id, updateExpenseDto, user._id);
-    return formatToApiResponse({ data: expense });
+    return await this.expensesService.update(id, updateExpenseDto, user._id);
   }
 
   @Delete(':id')

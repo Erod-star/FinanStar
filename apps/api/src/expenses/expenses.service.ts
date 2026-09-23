@@ -1,28 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateExpenseDto, ListExpensesQueryDto, UpdateExpenseDto } from './dto';
 import { Expense, ExpenseDocument } from './entities/expense.entity';
+import { APIResponse, formatToApiResponse } from '../apiResponse';
 
 @Injectable()
 export class ExpensesService {
   constructor(@InjectModel(Expense.name) private readonly expenseModel: Model<Expense>) {}
 
-  async create(
-    createExpenseDto: CreateExpenseDto,
-    userId: Types.ObjectId,
-  ): Promise<ExpenseDocument> {
-    return this.expenseModel.create({
-      ...createExpenseDto,
-      date: this.toUtcMidnight(createExpenseDto.date),
-      userId,
-    });
-  }
-
   async findAll(
     query: ListExpensesQueryDto,
     userId: Types.ObjectId,
-  ): Promise<{ expenses: ExpenseDocument[]; total: number }> {
+  ): Promise<APIResponse<ExpenseDocument[]>> {
     const now = new Date();
     const year = query.year ?? now.getUTCFullYear();
     const month = query.month ?? now.getUTCMonth() + 1;
@@ -38,24 +28,37 @@ export class ExpensesService {
       })
       .sort({ date: -1, createdAt: -1 });
 
-    return { expenses, total: expenses.length };
+    return formatToApiResponse({ data: expenses, total: expenses.length });
   }
 
-  async findOne(id: Types.ObjectId, userId: Types.ObjectId): Promise<ExpenseDocument> {
+  async findOne(id: Types.ObjectId, userId: Types.ObjectId): Promise<APIResponse<ExpenseDocument>> {
     const expense = await this.expenseModel.findOne({ _id: id, userId, deletedAt: null });
 
     if (!expense) {
       throw new NotFoundException('Expense not found');
     }
 
-    return expense;
+    return formatToApiResponse({ data: expense });
+  }
+
+  async create(
+    createExpenseDto: CreateExpenseDto,
+    userId: Types.ObjectId,
+  ): Promise<APIResponse<ExpenseDocument>> {
+    const expense = await this.expenseModel.create({
+      ...createExpenseDto,
+      date: this.toUtcMidnight(createExpenseDto.date),
+      userId,
+    });
+
+    return formatToApiResponse({ data: expense, status: HttpStatus.CREATED });
   }
 
   async update(
     id: Types.ObjectId,
     updateExpenseDto: UpdateExpenseDto,
     userId: Types.ObjectId,
-  ): Promise<ExpenseDocument> {
+  ): Promise<APIResponse<ExpenseDocument>> {
     const { date, ...rest } = updateExpenseDto;
 
     const expense = await this.expenseModel.findOneAndUpdate(
@@ -68,10 +71,10 @@ export class ExpensesService {
       throw new NotFoundException('Expense not found');
     }
 
-    return expense;
+    return formatToApiResponse({ data: expense });
   }
 
-  async remove(id: Types.ObjectId, userId: Types.ObjectId): Promise<ExpenseDocument> {
+  async remove(id: Types.ObjectId, userId: Types.ObjectId): Promise<APIResponse<ExpenseDocument>> {
     const expense = await this.expenseModel.findOneAndUpdate(
       { _id: id, userId, deletedAt: null },
       { deletedAt: new Date() },
@@ -82,7 +85,7 @@ export class ExpensesService {
       throw new NotFoundException('Expense not found');
     }
 
-    return expense;
+    return formatToApiResponse({ data: expense });
   }
 
   // 'YYYY-MM-DD' → UTC 00:00 of that day
