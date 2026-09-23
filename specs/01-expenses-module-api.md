@@ -73,11 +73,11 @@ export class Expense {
 
 DTOs (`apps/api/src/expenses/dto/`):
 
-| DTO                    | Fields                                                                                                                                                                                                                                                                      |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CreateExpenseDto`     | `date` (`@IsDateString({ strict: true })`, format `YYYY-MM-DD`), `description` (`@IsString @IsNotEmpty @MaxLength(200)`), `amount` (`@IsInt @Min(1)`), `necessityType` (`@IsEnum`), `category?` (`@IsOptional @IsEnum`), `source?` (`@IsOptional @IsString @MaxLength(50)`) |
-| `UpdateExpenseDto`     | `PartialType(CreateExpenseDto)`                                                                                                                                                                                                                                             |
-| `ListExpensesQueryDto` | `month?` (`@Type(() => Number) @IsInt @Min(1) @Max(12)`), `year?` (`@Type(() => Number) @IsInt @Min(2000) @Max(2100)`)                                                                                                                                                      |
+| DTO                    | Fields                                                                                                                                                                                                                                                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CreateExpenseDto`     | `date` (`@IsDateString({ strict: true }) @Matches(/^\d{4}-\d{2}-\d{2}$/)`, format `YYYY-MM-DD`), `description` (`@IsString @IsNotEmpty @MaxLength(200)`), `amount` (`@IsInt @Min(1)`), `necessityType` (`@IsEnum`), `category?` (`@IsOptional @IsEnum`), `source?` (`@IsOptional @IsString @MaxLength(50)`) |
+| `UpdateExpenseDto`     | `PartialType(CreateExpenseDto)`                                                                                                                                                                                                                                                                             |
+| `ListExpensesQueryDto` | `month?` (`@Type(() => Number) @IsInt @Min(1) @Max(12)`), `year?` (`@Type(() => Number) @IsInt @Min(2000) @Max(2100)`)                                                                                                                                                                                      |
 
 Conventions:
 
