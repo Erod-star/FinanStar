@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateExpenseDto, ListExpensesQueryDto, UpdateExpenseDto } from './dto';
@@ -41,17 +41,48 @@ export class ExpensesService {
     return { expenses, total: expenses.length };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} expense`;
+  async findOne(id: Types.ObjectId, userId: Types.ObjectId): Promise<ExpenseDocument> {
+    const expense = await this.expenseModel.findOne({ _id: id, userId, deletedAt: null });
+
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    return expense;
   }
 
-  update(id: number, updateExpenseDto: UpdateExpenseDto) {
-    console.log('🚀 => ~ updateExpenseDto:', updateExpenseDto);
-    return `This action updates a #${id} expense`;
+  async update(
+    id: Types.ObjectId,
+    updateExpenseDto: UpdateExpenseDto,
+    userId: Types.ObjectId,
+  ): Promise<ExpenseDocument> {
+    const { date, ...rest } = updateExpenseDto;
+
+    const expense = await this.expenseModel.findOneAndUpdate(
+      { _id: id, userId, deletedAt: null },
+      { ...rest, ...(date && { date: this.toUtcMidnight(date) }) },
+      { new: true },
+    );
+
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    return expense;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} expense`;
+  async remove(id: Types.ObjectId, userId: Types.ObjectId): Promise<ExpenseDocument> {
+    const expense = await this.expenseModel.findOneAndUpdate(
+      { _id: id, userId, deletedAt: null },
+      { deletedAt: new Date() },
+      { new: true },
+    );
+
+    if (!expense) {
+      throw new NotFoundException('Expense not found');
+    }
+
+    return expense;
   }
 
   // 'YYYY-MM-DD' → UTC 00:00 of that day
