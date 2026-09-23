@@ -6,7 +6,6 @@ import { CreateExpenseDto, ListExpensesQueryDto, UpdateExpenseDto } from './dto'
 import { Auth } from '../auth/decorators/auth.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { UserDocument } from '../auth/entities/user.entity';
-import { formatToApiResponse } from '../apiResponse';
 
 @Controller('expenses')
 @Auth()
@@ -39,7 +38,6 @@ export class ExpensesController {
 
   @Delete(':id')
   async remove(@Param('id', ParseObjectIdPipe) id: Types.ObjectId, @GetUser() user: UserDocument) {
-    const expense = await this.expensesService.remove(id, user._id);
-    return formatToApiResponse({ data: expense });
+    return await this.expensesService.remove(id, user._id);
   }
 }
